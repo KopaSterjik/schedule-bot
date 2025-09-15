@@ -1,3 +1,1 @@
-# schedule-bot
-# schedule-bot
-# schedule-bot
+#BNTU Schedule
