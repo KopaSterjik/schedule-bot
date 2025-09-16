@@ -3,7 +3,7 @@ from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     ContextTypes, ConversationHandler
 )
-from config import BOT_TOKEN, schedule_yana, schedule_ksenia
+from config import BOT_TOKEN, schedule_yana, schedule_ksenia, schedule_alina
 
 CHOOSE_PERSON, CHOOSE_DAY, CHOOSE_WEEK = range(3)
 
@@ -11,7 +11,8 @@ CHOOSE_PERSON, CHOOSE_DAY, CHOOSE_WEEK = range(3)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [InlineKeyboardButton("Яна", callback_data="yana"),
-         InlineKeyboardButton("Ксения", callback_data="ksenia")]
+         InlineKeyboardButton("Ксения", callback_data="ksenia"),
+         InlineKeyboardButton("Алина", callback_data="alina")]
     ]
     if update.message:
         await update.message.reply_text("👋 Привет, кто ты?",
@@ -55,7 +56,14 @@ async def choose_week(update: Update, context: ContextTypes.DEFAULT_TYPE):
     day = context.user_data.get("day")
     week = q.data
 
-    table = schedule_yana if person == "yana" else schedule_ksenia
+    if(person == "yana"):
+        table = schedule_yana
+    elif(person == "ksenia"):
+        table = schedule_ksenia
+    else:
+        table = schedule_alina
+    
+
     lessons = table.get(day, {}).get(week, [])
 
     if not lessons:
@@ -78,7 +86,7 @@ if __name__ == "__main__":
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSE_PERSON: [
-                CallbackQueryHandler(choose_person, pattern="^(yana|ksenia)$"),
+                CallbackQueryHandler(choose_person, pattern="^(yana|ksenia|alina)$"),
                 CallbackQueryHandler(start, pattern="^start$")
             ],
             CHOOSE_DAY: [
