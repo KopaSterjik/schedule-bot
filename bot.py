@@ -3,9 +3,17 @@ from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     ContextTypes, ConversationHandler
 )
+from datetime import date
 from config import BOT_TOKEN, schedule_yana, schedule_ksenia, schedule_alina
 
-CHOOSE_PERSON, CHOOSE_DAY, CHOOSE_WEEK = range(3)
+CHOOSE_PERSON, CHOOSE_DAY = range(2)
+
+
+def get_week_type():
+    start_date = date(2025, 9, 1)
+    today = date.today()
+    week_number = ((today - start_date).days // 7) + 1
+    return "первая" if week_number % 2 != 0 else "вторая"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,35 +49,23 @@ async def choose_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def choose_day(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
-    context.user_data["day"] = q.data
-    buttons = [[InlineKeyboardButton("Первая", callback_data="первая"),
-                InlineKeyboardButton("Вторая", callback_data="вторая")]]
-    await q.edit_message_text("📅 Выбери учебную неделю:",
-                              reply_markup=InlineKeyboardMarkup(buttons))
-    return CHOOSE_WEEK
-
-
-async def choose_week(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
     person = context.user_data.get("person")
-    day = context.user_data.get("day")
-    week = q.data
+    day = q.data
+    week = get_week_type()
 
-    if(person == "yana"):
+    if person == "yana":
         table = schedule_yana
-    elif(person == "ksenia"):
+    elif person == "ksenia":
         table = schedule_ksenia
     else:
         table = schedule_alina
-    
 
     lessons = table.get(day, {}).get(week, [])
 
     if not lessons:
-        text = "🚫 Нет данных для выбранного дня."
+        text = f"🚫 Нет данных для выбранного дня.\nТекущая неделя: {week.capitalize()}"
     else:
-        text = "\n\n———\n\n".join(
+        text = f"📆 Неделя: {week.capitalize()}\n\n" + "\n\n———\n\n".join(
             f"🕒 {l['time']}\n📚 {l['subject']} — {l['type']}\n🏫 {l['room']}\n👨‍🏫 {l['teacher']}"
             for l in lessons
         )
@@ -91,9 +87,6 @@ if __name__ == "__main__":
             ],
             CHOOSE_DAY: [
                 CallbackQueryHandler(choose_day, pattern="^(пн|вт|ср|чт|пт|сб)$")
-            ],
-            CHOOSE_WEEK: [
-                CallbackQueryHandler(choose_week, pattern="^(первая|вторая)$")
             ],
         },
         fallbacks=[],
